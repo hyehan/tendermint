@@ -38,6 +38,26 @@ func (l *localClientCreator) NewABCIClient() (abcicli.Client, error) {
 	return abcicli.NewLocalClient(l.mtx, l.app), nil
 }
 
+//----------------------------------------------------
+// committing proxy ensures only actual DB writes block queries
+
+type committingClientCreator struct {
+	mtx *tmsync.RWInitMutex
+	app types.Application
+}
+
+func NewCommittingClientCreator(app types.Application) ClientCreator {
+	mtx := tmsync.NewRWInitMutex()
+	return &committingClientCreator{
+		mtx: mtx,
+		app: app,
+	}
+}
+
+func (l *committingClientCreator) NewABCIClient() (abcicli.Client, error) {
+	return abcicli.NewCommittingClient(l.mtx, l.app), nil
+}
+
 //---------------------------------------------------------------
 // remote proxy opens new connections to an external app process
 
